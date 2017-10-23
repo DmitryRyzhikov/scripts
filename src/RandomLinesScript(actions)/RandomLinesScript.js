@@ -53,6 +53,7 @@ function init() {
 
 function execute() {
     drawRectangleAroundArtBoard();
+    drawStartingLines()
     drawRandomLines();
 
     // action: select all -> pathfinder divide -> selact all -> group
@@ -79,6 +80,51 @@ function findArtboardRectangle(name) {
     }
 }
 
+/**
+ * Due to problem that lines are not normally drawn near edges, we need to fix it by drawing lines in
+ * every corner of arboard
+ */
+function drawStartingLines() {
+    // in percents
+    var allowedToTakeInEveryCorner = 0.1;
+    var linesToDrawInEveryCorner = 3;
+
+    var topToBottomFrom = 5;
+    var topToBottomTo = Math.round(artBoardWidth * allowedToTakeInEveryCorner);
+
+    // top-to-bottom lines
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardTopLeftX + getRandomInt(topToBottomFrom, topToBottomTo), artBoardTopLeftY);
+        linePoints[1] = new Array(artBoardTopLeftX + getRandomInt(topToBottomFrom, topToBottomTo), artBoardBottomRightY);
+        drawLineFromPoints(linePoints);
+    }
+
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardBottomRightX - getRandomInt(topToBottomFrom, topToBottomTo), artBoardTopLeftY);
+        linePoints[1] = new Array(artBoardBottomRightX - getRandomInt(topToBottomFrom, topToBottomTo), artBoardBottomRightY);
+        drawLineFromPoints(linePoints);
+    }
+
+
+    var leftToRightFrom = 5;
+    var leftToRightTo = Math.round(artBoardHeight * allowedToTakeInEveryCorner);
+    // left-to-right lines
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardTopLeftX, artBoardTopLeftY - getRandomInt(leftToRightFrom, leftToRightTo));
+        linePoints[1] = new Array(artBoardBottomRightX, artBoardTopLeftY - getRandomInt(leftToRightFrom, leftToRightTo));
+        drawLineFromPoints(linePoints);
+    }
+
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardTopLeftX, artBoardBottomRightY + getRandomInt(leftToRightFrom, leftToRightTo));
+        linePoints[1] = new Array(artBoardBottomRightX, artBoardBottomRightY + getRandomInt(leftToRightFrom, leftToRightTo));
+        drawLineFromPoints(linePoints);
+    }
+}
 
 function drawRandomLines() {
     for (var i = 0; i < numberOfLinesToDraw; i++) {
