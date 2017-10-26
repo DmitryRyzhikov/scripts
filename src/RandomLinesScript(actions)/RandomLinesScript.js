@@ -18,7 +18,8 @@ var artBoardBottomRightX;
 var artBoardBottomRightY;
 var artBoardWidth;
 var artBoardHeight;
-
+var artBoardCentralPointX;
+var artBoardCentralPointY;
 
 var numberOfLinesToDraw;
 
@@ -31,6 +32,7 @@ function init() {
     delta = 0;
 
     var artBoardRect = findArtboardRectangle(artBoardName);
+    $.writeln("Arboard:" + artBoardRect);
     artBoardTopLeftX = artBoardRect[0];
     artBoardTopLeftY = artBoardRect[1];
     artBoardBottomRightX = artBoardRect[2];
@@ -38,6 +40,11 @@ function init() {
     artBoardWidth = Math.abs(artBoardBottomRightX - artBoardTopLeftX);
     artBoardHeight = Math.abs(artBoardBottomRightY - artBoardTopLeftY);
 
+    // artboard central point
+    artBoardCentralPointX = Math.round(artBoardTopLeftX + (artBoardWidth / 2));
+    $.writeln("Artboard center X coordinate " + artBoardCentralPointX);
+    artBoardCentralPointY = Math.round(artBoardTopLeftY - (artBoardHeight / 2));
+    $.writeln("Artboard center Y coordinate " + artBoardCentralPointY);
 
     // default stroke color (gray 90%)
     var newRGBColor = new RGBColor();
@@ -55,6 +62,7 @@ function execute() {
     drawRectangleAroundArtBoard();
     drawStartingLines()
     drawRandomLines();
+    removeAllExceptPathsUnderCircle();
 
     // action: select all -> pathfinder divide -> selact all -> group
     runActionFromDefaultSet('selectAllDivideAndGroup');
@@ -233,9 +241,62 @@ function runActionFromDefaultSet(actionName) {
     app.doScript(actionName, 'Default Actions', false);
 }
 
+function removeAllExceptPathsUnderCircle() {
+    var pathItems = activeDocument.pathItems;
+    for (var i = 0; i < pathItems.length; i++) {
+
+        var pathItem = pathItems[i];
+        $.writeln("Path Item " + pathItem);
+
+
+        // for every point of path check is point belongs to circle. If at least one point belong to circle
+        // than we should left this path, otherwise - we should remove it
+        var deletePathItem = true;
+        var pathItemPoints = pathItem.pathPoints;
+        for (var j = 0; j < pathItemPoints.length; j++) {
+            var pathItemPoint = pathItemPoints[j];
+
+            var pathItemPointX = pathItemPoint.anchor[0];
+            var pathItemPointY = pathItemPoint.anchor[1];
+
+            var belongToCircle = checkIsPointBelongToCircle(pathItemPointX, pathItemPointY);
+
+            $.writeln("Path Item  belongs to circle: " + belongToCircle);
+            if (belongToCircle) {
+                deletePathItem = false;
+                break;
+            }
+        }
+
+        if (deletePathItem) {
+            pathItem.remove();
+        }
+
+    }
+}
+
+function checkIsPointBelongToCircle(pathItemPointX, pathItemPointY) {
+    //http://taskcode.ru/if/circle-point
+
+    // assume that circle radius is 40% of width
+    var circleRadius = Math.round(artBoardWidth * 0.1);
+
+    var pointXAccordingToCenter = Math.abs(pathItemPointX) - Math.abs(artBoardCentralPointX);
+    var pointYAccordingToCenter = Math.abs(pathItemPointY) - Math.abs(artBoardCentralPointY);
+
+    var fromCenterToPoint = Math.sqrt(pointXAccordingToCenter * pointXAccordingToCenter + pointYAccordingToCenter * pointYAccordingToCenter);
+
+    if (fromCenterToPoint > circleRadius) {
+        return false
+    } else {
+        return true;
+    }
+
+}
+
 
 /**
- * Finds group and colors all paths of this group to different shades of gray
+ * Finds group and color all paths of this group to different shades of gray
  */
 function findGroupAndColorItInShadesOfGray() {
     // After divide and group we basically have only one group
