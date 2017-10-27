@@ -20,7 +20,7 @@ var artBoardWidth;
 var artBoardHeight;
 
 
-var numberOfLinesToDraw;
+var numberOfRandomLinesToDraw;
 
 function init() {
     //TODO open new illustrator file
@@ -87,7 +87,7 @@ function findArtboardRectangle(name) {
 function drawStartingLines() {
     // in percents
     var allowedToTakeInEveryCorner = 0.1;
-    var linesToDrawInEveryCorner = 3;
+    var linesToDrawInEveryCorner = 5;
 
     var topToBottomFrom = 5;
     var topToBottomTo = Math.round(artBoardWidth * allowedToTakeInEveryCorner);
@@ -127,7 +127,7 @@ function drawStartingLines() {
 }
 
 function drawRandomLines() {
-    for (var i = 0; i < numberOfLinesToDraw; i++) {
+    for (var i = 0; i < numberOfRandomLinesToDraw; i++) {
         var randomNum = getRandomInt(1, 2);
         if (randomNum == 1) {
             drawTopToBottomLine();
