@@ -8,6 +8,8 @@ function main() {
     if (doc) {
         init();
         execute();
+        //drawCircle(1, artBoardCentralPointY, artBoardCentralPointX, 100, 100);
+        //drawCircleInArtBoardCenter();
     }
 }
 
@@ -62,7 +64,7 @@ function execute() {
     drawRectangleAroundArtBoard();
     drawStartingLines()
     drawRandomLines();
-    removeAllExceptPathsUnderCircle();
+    //removeAllExceptPathsUnderCircle();
 
     // action: select all -> pathfinder divide -> selact all -> group
     runActionFromDefaultSet('selectAllDivideAndGroup');
@@ -77,6 +79,21 @@ function execute() {
     // action: prepares web preview and saves EPS 10 file
     //runActionFromDefaultSet('prepareJpgAndSaveEps');
 }
+
+//drawCircle(1, artBoardCentralPointY, artBoardCentralPointX, 100, 100);
+function drawCircle(number, top, left, height, width) {
+    var circle =  app.activeDocument.pathItems.ellipse(top, left, height, width, false, false);
+}
+
+function drawCircleInArtBoardCenter() {
+    var diameter = 0.8 * artBoardWidth;
+    $.writeln("Circle diameter " + diameter);
+
+    //app.activeDocument.pathItems.ellipse(artBoardCentralPointY + diameter/2, artBoardCentralPointX + diameter/2, diameter, diameter, false, false);
+    app.activeDocument.pathItems.ellipse(artBoardCentralPointY, artBoardCentralPointX, 1000, 1000, false, false);
+    //app.activeDocument.pathItems.ellipse(0, 0, 1000, 1000, false, false);
+}
+
 
 /*
  Finds art board by its name and returns its coordinates  rectangle
@@ -243,6 +260,8 @@ function runActionFromDefaultSet(actionName) {
 
 function removeAllExceptPathsUnderCircle() {
     var pathItems = activeDocument.pathItems;
+    var pathItemsToRemove = [];
+    var counter = 0;
     for (var i = 0; i < pathItems.length; i++) {
 
         var pathItem = pathItems[i];
@@ -269,25 +288,38 @@ function removeAllExceptPathsUnderCircle() {
         }
 
         if (deletePathItem) {
-            pathItem.remove();
+            pathItemsToRemove[counter] = pathItem;
+            counter++;
         }
 
     }
+
+    // remove all that should be removed
+    for (var i = 0; i < pathItemsToRemove.length; i++) {
+        var pathItem = pathItemsToRemove[i];
+        pathItem.remove();
+    }
+
 }
 
 function checkIsPointBelongToCircle(pathItemPointX, pathItemPointY) {
     //http://taskcode.ru/if/circle-point
+    $.writeln(" ");
+    $.writeln("Accepted X[" + pathItemPointX + "], accepted Y[" + pathItemPointY + "]");
 
-    // assume that circle radius is 40% of width
-    var circleRadius = Math.round(artBoardWidth * 0.1);
+
+    var circleRadius = Math.round(artBoardWidth * 0.3);
+    $.writeln("Circle radius: " + circleRadius);
 
     var pointXAccordingToCenter = Math.abs(pathItemPointX) - Math.abs(artBoardCentralPointX);
     var pointYAccordingToCenter = Math.abs(pathItemPointY) - Math.abs(artBoardCentralPointY);
+    $.writeln("X-TO-CENTER[" + pointXAccordingToCenter + "], Y-TO-CENTER[" + pointYAccordingToCenter + "]");
 
     var fromCenterToPoint = Math.sqrt(pointXAccordingToCenter * pointXAccordingToCenter + pointYAccordingToCenter * pointYAccordingToCenter);
+    $.writeln("From center to point[" + fromCenterToPoint + "]");
 
     if (fromCenterToPoint > circleRadius) {
-        return false
+        return false;
     } else {
         return true;
     }
