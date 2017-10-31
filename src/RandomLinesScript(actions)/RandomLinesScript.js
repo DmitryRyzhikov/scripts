@@ -1,4 +1,4 @@
-﻿//#include "Utils.js";
+﻿#include "Utils.js";
 
 main();
 
@@ -18,7 +18,7 @@ var artBoardBottomRightX;
 var artBoardBottomRightY;
 var artBoardWidth;
 var artBoardHeight;
-
+var artBoardName;
 
 var numberOfRandomLinesToDraw;
 
@@ -26,8 +26,8 @@ function init() {
     //TODO open new illustrator file
 
     //use default art board name on new file
-    var artBoardName = "Artboard 1";
-    numberOfLinesToDraw = 150;
+    artBoardName = "Artboard 1";
+    numberOfRandomLinesToDraw = 150;
     delta = 0;
 
     var artBoardRect = findArtboardRectangle(artBoardName);
@@ -52,14 +52,14 @@ function init() {
 }
 
 function execute() {
-    drawRectangleAroundArtBoard();
+    drawRectangleAroundArtBoard(artBoardName);
     drawStartingLines()
     drawRandomLines();
 
     // action: select all -> pathfinder divide -> selact all -> group
     runActionFromDefaultSet('selectAllDivideAndGroup');
 
-    findGroupAndColorItInShadesOfGray();
+    findSingleGroupAndColorItPathsInShadesOfGray();
     drawRectangleWithColorBurnBlendingMode();
     //TODO crop result
 
@@ -70,24 +70,14 @@ function execute() {
     //runActionFromDefaultSet('prepareJpgAndSaveEps');
 }
 
-/*
- Finds art board by its name and returns its coordinates  rectangle
- */
-function findArtboardRectangle(name) {
-    var artboard = findArtBoardByName(name);
-    if (artboard) {
-        return artboard.artboardRect;
-    }
-}
-
 /**
  * Due to problem that lines are not normally drawn near edges, we need to fix it by drawing lines in
- * every corner of arboard
+ * every corner of art board
  */
 function drawStartingLines() {
     // in percents
-    var allowedToTakeInEveryCorner = 0.1;
-    var linesToDrawInEveryCorner = 5;
+    var allowedToTakeInEveryCorner = 0.15;
+    var linesToDrawInEveryCorner = 6;
 
     var topToBottomFrom = 5;
     var topToBottomTo = Math.round(artBoardWidth * allowedToTakeInEveryCorner);
@@ -107,7 +97,7 @@ function drawStartingLines() {
         drawLineFromPoints(linePoints);
     }
 
-
+    // left-to-right lines
     var leftToRightFrom = 5;
     var leftToRightTo = Math.round(artBoardHeight * allowedToTakeInEveryCorner);
     // left-to-right lines
@@ -177,38 +167,15 @@ function drawLeftToRightLine() {
     drawLineFromPoints(linePoints);
 }
 
-function drawLineFromPoints(linePoints) {
-    newPath = app.activeDocument.pathItems.add();
-    newPath.setEntirePath(linePoints);
-    newPath.stroked = true;
-
-    var strokeCmykColor = new CMYKColor();
-    strokeCmykColor.cyan = 0;
-    strokeCmykColor.magenta = 0;
-    strokeCmykColor.yellow = 0;
-    strokeCmykColor.black = 99;
-
-    newPath.strokeColor = strokeCmykColor;
-    newPath.strokeWidth = 0.5;
-}
-
 
 function generateRandomNumberWithDelta(xMin, xMax) {
     var generated = getRandomInt(xMin - delta, xMax + delta);
     return generated;
 }
 
-function drawRectangleAroundArtBoard() {
-    // top, left, width, height
-    newRectangle = app.activeDocument.pathItems.rectangle(
-        artBoardTopLeftY, artBoardTopLeftX, artBoardWidth, artBoardHeight
-    );
-
-    return newRectangle;
-}
 
 function drawRectangleWithColorBurnBlendingMode() {
-    rectangle = drawRectangleAroundArtBoard();
+    rectangle = drawRectangleAroundArtBoard(artBoardName);
 
     var redRGBColor = new RGBColor();
     redRGBColor.red = 226;
@@ -221,87 +188,67 @@ function drawRectangleWithColorBurnBlendingMode() {
 }
 
 
-/**
- * Returns a random integer between min (inclusive) and max (inclusive)
- * Using Math.round() will give you a non-uniform distribution!
- */
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+///**
+// * Finds group and colors all paths of this group to different shades of gray
+// */
+//function findSingleGroupAndColorItPathsInShadesOfGray() {
+//    // After divide and group we basically have only one group
+//    var groupItems = activeDocument.groupItems;
+//    var myGroup = groupItems[0];
+//
+//    var storage = [];
+//    findAllGroupObjectsByName(myGroup, "", storage);
+//
+//    var objectsToColorLength = storage.length;
+//    for (var i = 0; i < objectsToColorLength; i++) {
+//        var colorObject = storage[i];
+//
+//        //random black from 0 to 99
+//        var black = getRandomInt(5, 95);
+//
+//        var cmykColor = new CMYKColor();
+//        cmykColor.black = black;
+//        cmykColor.cyan = 0;
+//        cmykColor.magenta = 0;
+//        cmykColor.yellow = 0;
+//
+//        // Use the color object in the path item
+//        colorObject.filled = true;
+//        colorObject.fillColor = cmykColor;
+//    }
+//}
+//
+///*
+// RECURSIVE.Searches all path items with certain name on any level of accepted group.
+// All found items are collected in accepted storage
+// */
+//function findAllGroupObjectsByName(group, name, storage) {
+//    if (!group) {
+//        return;
+//    }
+//
+//    // find pathItems
+//    var groupDirectPathItems = group.pathItems;
+//    var pathItemsLength = groupDirectPathItems.length;
+//    if (pathItemsLength > 0) {
+//        for (var i = 0; i < pathItemsLength; i++) {
+//            var pathItem = groupDirectPathItems[i];
+//            if (pathItem.name == name) {
+//                storage.push(pathItem);
+//            }
+//        }
+//    }
+//
+//    // check nested groups as well
+//    var nestedGroups = group.groupItems;
+//    var nestedGroupLength = nestedGroups.length;
+//    for (var i = 0; i < nestedGroupLength; i++) {
+//        var nestedGroup = nestedGroups[i];
+//        findAllGroupObjectsByName(nestedGroup, name, storage);
+//    }
+//
+//}
 
-function runActionFromDefaultSet(actionName) {
-    app.doScript(actionName, 'Default Actions', false);
-}
-
-
-/**
- * Finds group and colors all paths of this group to different shades of gray
- */
-function findGroupAndColorItInShadesOfGray() {
-    // After divide and group we basically have only one group
-    var groupItems = activeDocument.groupItems;
-    var myGroup = groupItems[0];
-
-    var storage = [];
-    findAllGroupObjectsByName(myGroup, "", storage);
-    var objectsToColor = storage.length;
-    for (var i = 0; i < objectsToColor; i++) {
-        var colorObject = storage[i];
-
-        //random black from 0 to 99
-        var black = getRandomInt(5, 95);
-
-        var cmykColor = new CMYKColor();
-        cmykColor.black = black;
-        cmykColor.cyan = 0;
-        cmykColor.magenta = 0;
-        cmykColor.yellow = 0;
-
-        // Use the color object in the path item
-        colorObject.filled = true;
-        colorObject.fillColor = cmykColor;
-    }
-}
-
-/*
- RECURSIVE.Searches all path items with certain name on any level of accepted group.
- All found items are collected in accepted storage
- */
-function findAllGroupObjectsByName(group, name, storage) {
-    if (!group) {
-        return;
-    }
-
-    // find pathItems
-    var groupDirectPathItems = group.pathItems;
-    var pathItemsLength = groupDirectPathItems.length;
-    if (pathItemsLength > 0) {
-        for (var i = 0; i < pathItemsLength; i++) {
-            var pathItem = groupDirectPathItems[i];
-            if (pathItem.name == name) {
-                storage.push(pathItem);
-            }
-        }
-    }
-
-    // check nested groups as well
-    var nestedGroups = group.groupItems;
-    var nestedGroupLength = nestedGroups.length;
-    for (var i = 0; i < nestedGroupLength; i++) {
-        var nestedGroup = nestedGroups[i];
-        findAllGroupObjectsByName(nestedGroup, name, storage);
-    }
-
-}
-
-
-function selectAll() {
-    var allPaths = activeDocument.pathItems;
-    var allPathsCount = allPaths.length;
-    for (var i = 0; i < allPathsCount; i++) {
-        allPaths[i].selected = true;
-    }
-}
 
 // storage for groups
 var myGroupsMap = null;
@@ -519,36 +466,4 @@ function findGroupItemByName(name) {
     }
 
     $.writeln("Group with name [" + name + "] is not found");
-}
-
-/*
- Searches art board by its name
- */
-function findArtBoardByName(name) {
-    var artboards = activeDocument.artboards;
-
-    var length = artboards.length;
-    for (var i = 0; i < length; i++) {
-        var artboard = artboards[i];
-        if (artboard.name == name) {
-            $.writeln("Found artboard with name " + name);
-
-            return artboard;
-        }
-    }
-
-    $.writeln("Artboard with name [" + name + "] is not found");
-}
-
-function checkThatDocumentIsOpen() {
-
-    if (documents.length > 0) {
-
-        doc = activeDocument;
-
-        return doc;
-
-    } else {
-        Window.alert("You must open at least one document.");
-    }
 }

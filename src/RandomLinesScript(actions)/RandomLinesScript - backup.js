@@ -1,7 +1,4 @@
-﻿/**
- * @Copyright Dmitry Ryzhikov, 2016
- *
- */
+﻿//#include "Utils.js";
 
 main();
 
@@ -19,34 +16,118 @@ var artBoardTopLeftX;
 var artBoardTopLeftY;
 var artBoardBottomRightX;
 var artBoardBottomRightY;
-var numberOfLinesToDraw;
+var artBoardWidth;
+var artBoardHeight;
+
+
+var numberOfRandomLinesToDraw;
 
 function init() {
+    //TODO open new illustrator file
 
-    var artBoardName = "artboardCanvas";
-    numberOfLinesToDraw = 100;
-    delta = 20;
+    //use default art board name on new file
+    var artBoardName = "Artboard 1";
+    numberOfRandomLinesToDraw = 150;
+    delta = 0;
 
     var artBoardRect = findArtboardRectangle(artBoardName);
     artBoardTopLeftX = artBoardRect[0];
     artBoardTopLeftY = artBoardRect[1];
     artBoardBottomRightX = artBoardRect[2];
     artBoardBottomRightY = artBoardRect[3];
+    artBoardWidth = Math.abs(artBoardBottomRightX - artBoardTopLeftX);
+    artBoardHeight = Math.abs(artBoardBottomRightY - artBoardTopLeftY);
 
-    $.writeln(artBoardRect);
+
+    // default stroke color (gray 90%)
+    var newRGBColor = new RGBColor();
+    newRGBColor.red = 64;
+    newRGBColor.green = 64;
+    newRGBColor.blue = 65;
+
+    //default stroke properties
+    app.activeDocument.defaultStroked = true;
+    app.activeDocument.defaultStrokeColor = newRGBColor;
+    app.activeDocument.defaultStrokeWidth = 0.5;
 }
 
 function execute() {
     drawRectangleAroundArtBoard();
-    drawLines();
-    runActionThatWillDivideLinesAndGroupElements();
-    findGroupAndColorIt();
-    //TODO rectangle with color
+    drawStartingLines()
+    drawRandomLines();
+
+    // action: select all -> pathfinder divide -> selact all -> group
+    runActionFromDefaultSet('selectAllDivideAndGroup');
+
+    findGroupAndColorItInShadesOfGray();
+    drawRectangleWithColorBurnBlendingMode();
     //TODO crop result
+
+    // standard action: delete all unused panel items
+    //runActionFromDefaultSet('Delete Unused Panel Items');
+
+    // action: prepares web preview and saves EPS 10 file
+    //runActionFromDefaultSet('prepareJpgAndSaveEps');
 }
 
-function drawLines() {
-    for (var i = 0; i < numberOfLinesToDraw; i++) {
+/*
+ Finds art board by its name and returns its coordinates  rectangle
+ */
+function findArtboardRectangle(name) {
+    var artboard = findArtBoardByName(name);
+    if (artboard) {
+        return artboard.artboardRect;
+    }
+}
+
+/**
+ * Due to problem that lines are not normally drawn near edges, we need to fix it by drawing lines in
+ * every corner of arboard
+ */
+function drawStartingLines() {
+    // in percents
+    var allowedToTakeInEveryCorner = 0.1;
+    var linesToDrawInEveryCorner = 5;
+
+    var topToBottomFrom = 5;
+    var topToBottomTo = Math.round(artBoardWidth * allowedToTakeInEveryCorner);
+
+    // top-to-bottom lines
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardTopLeftX + getRandomInt(topToBottomFrom, topToBottomTo), artBoardTopLeftY);
+        linePoints[1] = new Array(artBoardTopLeftX + getRandomInt(topToBottomFrom, topToBottomTo), artBoardBottomRightY);
+        drawLineFromPoints(linePoints);
+    }
+
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardBottomRightX - getRandomInt(topToBottomFrom, topToBottomTo), artBoardTopLeftY);
+        linePoints[1] = new Array(artBoardBottomRightX - getRandomInt(topToBottomFrom, topToBottomTo), artBoardBottomRightY);
+        drawLineFromPoints(linePoints);
+    }
+
+
+    var leftToRightFrom = 5;
+    var leftToRightTo = Math.round(artBoardHeight * allowedToTakeInEveryCorner);
+    // left-to-right lines
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardTopLeftX, artBoardTopLeftY - getRandomInt(leftToRightFrom, leftToRightTo));
+        linePoints[1] = new Array(artBoardBottomRightX, artBoardTopLeftY - getRandomInt(leftToRightFrom, leftToRightTo));
+        drawLineFromPoints(linePoints);
+    }
+
+    for (var i = 0; i < linesToDrawInEveryCorner; i++) {
+        var linePoints = new Array(1);
+        linePoints[0] = new Array(artBoardTopLeftX, artBoardBottomRightY + getRandomInt(leftToRightFrom, leftToRightTo));
+        linePoints[1] = new Array(artBoardBottomRightX, artBoardBottomRightY + getRandomInt(leftToRightFrom, leftToRightTo));
+        drawLineFromPoints(linePoints);
+    }
+}
+
+function drawRandomLines() {
+    for (var i = 0; i < numberOfRandomLinesToDraw; i++) {
         var randomNum = getRandomInt(1, 2);
         if (randomNum == 1) {
             drawTopToBottomLine();
@@ -61,21 +142,19 @@ function drawLines() {
  */
 function drawTopToBottomLine() {
     $.writeln("Drawing top to bottom line");
-    var lineList = new Array(1);
+    var linePoints = new Array(1);
 
-    var topPointX = generate(artBoardTopLeftX, artBoardBottomRightX);
+    var topPointX = generateRandomNumberWithDelta(artBoardTopLeftX, artBoardBottomRightX);
     var topPointY = artBoardTopLeftY + delta;
     $.writeln("Top point. X =" + topPointX + ", Y = " + topPointY);
-    lineList[0] = new Array(topPointX, topPointY);
+    linePoints[0] = new Array(topPointX, topPointY);
 
-    var bottomPointX = generate(artBoardTopLeftX, artBoardBottomRightX);
+    var bottomPointX = generateRandomNumberWithDelta(artBoardTopLeftX, artBoardBottomRightX);
     var bottomPointY = artBoardBottomRightY - delta;
     $.writeln("Bottom point. X =" + bottomPointX + ", Y = " + bottomPointY);
-    lineList[1] = new Array(bottomPointX, bottomPointY);
+    linePoints[1] = new Array(bottomPointX, bottomPointY);
 
-    app.defaultStroked = true;
-    newPath = app.activeDocument.pathItems.add();
-    newPath.setEntirePath(lineList);
+    drawLineFromPoints(linePoints);
 }
 
 /**
@@ -83,35 +162,64 @@ function drawTopToBottomLine() {
  */
 function drawLeftToRightLine() {
     $.writeln("Drawing left to right line");
-    var lineList = new Array(1);
+    var linePoints = new Array(1);
 
     var leftPointX = artBoardTopLeftX - delta;
-    var leftPointY = generate(artBoardTopLeftY, artBoardBottomRightY);
+    var leftPointY = generateRandomNumberWithDelta(artBoardTopLeftY, artBoardBottomRightY);
     $.writeln("Left point. X =" + leftPointX + ", Y = " + leftPointY);
-    lineList[0] = new Array(leftPointX, leftPointY);
+    linePoints[0] = new Array(leftPointX, leftPointY);
 
     var rightPointX = artBoardBottomRightX + delta;
-    var rightPointY = generate(artBoardTopLeftY, artBoardBottomRightY);
+    var rightPointY = generateRandomNumberWithDelta(artBoardTopLeftY, artBoardBottomRightY);
     $.writeln("Bottom point. X =" + rightPointX + ", Y = " + rightPointY);
-    lineList[1] = new Array(rightPointX, rightPointY);
+    linePoints[1] = new Array(rightPointX, rightPointY);
 
-    app.defaultStroked = true;
+    drawLineFromPoints(linePoints);
+}
+
+function drawLineFromPoints(linePoints) {
     newPath = app.activeDocument.pathItems.add();
-    newPath.setEntirePath(lineList);
+    newPath.setEntirePath(linePoints);
+    newPath.stroked = true;
+
+    var strokeCmykColor = new CMYKColor();
+    strokeCmykColor.cyan = 0;
+    strokeCmykColor.magenta = 0;
+    strokeCmykColor.yellow = 0;
+    strokeCmykColor.black = 99;
+
+    newPath.strokeColor = strokeCmykColor;
+    newPath.strokeWidth = 0.5;
 }
 
 
-function generate(xMin, xMax) {
+function generateRandomNumberWithDelta(xMin, xMax) {
     var generated = getRandomInt(xMin - delta, xMax + delta);
     return generated;
 }
 
 function drawRectangleAroundArtBoard() {
-    var artBoardWidth = Math.abs(artBoardBottomRightX - artBoardTopLeftX);
-    var artBoardHeight = Math.abs(artBoardBottomRightY - artBoardTopLeftY);
     // top, left, width, height
-    app.activeDocument.pathItems.rectangle(artBoardTopLeftY, artBoardTopLeftX, artBoardWidth, artBoardHeight);
+    newRectangle = app.activeDocument.pathItems.rectangle(
+        artBoardTopLeftY, artBoardTopLeftX, artBoardWidth, artBoardHeight
+    );
+
+    return newRectangle;
 }
+
+function drawRectangleWithColorBurnBlendingMode() {
+    rectangle = drawRectangleAroundArtBoard();
+
+    var redRGBColor = new RGBColor();
+    redRGBColor.red = 226;
+    redRGBColor.green = 6;
+    redRGBColor.blue = 19;
+
+    rectangle.stroked = false;
+    rectangle.fillColor = redRGBColor;
+    rectangle.blendingMode = BlendModes.COLORBURN;
+}
+
 
 /**
  * Returns a random integer between min (inclusive) and max (inclusive)
@@ -121,26 +229,16 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/**
- * Run action from script
- * Best explanation found: https://stackoverflow.com/questions/42912799/can-i-execute-pathfinder-crop-from-the-pathfinder-panel-and-not-the-effects
- * 1. Create new Actions Set with name MyActions
- * 2. Create new Action in this set with necessary actions - in my case: Select All - Pathfinder Divide -
- * Select All - Group
- * 3. Set name of created Action to myAction.
- * 4. Via Actions panel select [Save Actions] and file MyActions.aia and put it in actions sub-folder in the
- * same folder as current script.
- */
-function runActionThatWillDivideLinesAndGroupElements() {
-    // TODO find out how to get base path to illustration installation folder and use scripts from default actions file
-    var thisFile = new File($.fileName);
-    var basePath = thisFile.path;
-    app.loadAction(new File(basePath + '/actions/MyActions.aia'));
-    app.doScript("myAction", "MyActions", false);
-    app.unloadAction("MyActions", "");
+function runActionFromDefaultSet(actionName) {
+    app.doScript(actionName, 'Default Actions', false);
 }
 
-function findGroupAndColorIt(){
+
+/**
+ * Finds group and colors all paths of this group to different shades of gray
+ */
+function findGroupAndColorItInShadesOfGray() {
+    // After divide and group we basically have only one group
     var groupItems = activeDocument.groupItems;
     var myGroup = groupItems[0];
 
@@ -197,18 +295,12 @@ function findAllGroupObjectsByName(group, name, storage) {
 }
 
 
-
-
 function selectAll() {
     var allPaths = activeDocument.pathItems;
     var allPathsCount = allPaths.length;
     for (var i = 0; i < allPathsCount; i++) {
         allPaths[i].selected = true;
     }
-}
-
-function intersect() {
-    graphicStyles
 }
 
 // storage for groups
@@ -330,7 +422,7 @@ function calculateGroupPositionAccordingToFacePin(group, facePinPosition) {
 }
 
 /*
- Calculates pin cental point coordinates. This works because pin is circle
+ Calculates pin central point coordinates. This works because pin is circle
  */
 function findPathItemCentralPoint(pathItem) {
     var pathItemPosition = pathItem.position;
@@ -376,17 +468,6 @@ function findPathItemInGroupByName(group, name) {
         if (pathItem) {
             return pathItem;
         }
-    }
-}
-
-
-/*
- Finds artboard by its name and returns its coordinates  rectangle
- */
-function findArtboardRectangle(name) {
-    var artboard = findArtboardByName(name);
-    if (artboard) {
-        return artboard.artboardRect;
     }
 }
 
@@ -441,9 +522,9 @@ function findGroupItemByName(name) {
 }
 
 /*
- Searches artboard by its name
+ Searches art board by its name
  */
-function findArtboardByName(name) {
+function findArtBoardByName(name) {
     var artboards = activeDocument.artboards;
 
     var length = artboards.length;
