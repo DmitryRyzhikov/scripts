@@ -15,6 +15,22 @@ function checkThatDocumentIsOpen() {
 
 
 /**
+ * Example of usage:
+ * drawCircle(artBoardCentralPointY, artBoardCentralPointX, 100);
+ *
+ * @param top - Y coordinate of top left point of rectangle drawn around circle
+ * @param left - X coordinate of top left point of rectangle drawn around circle
+ * @param diameter - diameter of circle
+ * @returns reference to drawn circle
+ */
+function drawCircle(top, left, diameter) {
+    var circle = app.activeDocument.pathItems.ellipse(top, left, diameter, diameter, false, false);
+
+    return circle;
+}
+
+
+/**
  * Draw line from line points array, that contains pairs of X&Y coordinates.
  *
  * @param linePoints array with line points
@@ -96,7 +112,6 @@ function findPathItemInGroupByName(group, pathItemName) {
         }
     }
 }
-
 
 
 /**
