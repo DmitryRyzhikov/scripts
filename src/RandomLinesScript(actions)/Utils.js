@@ -19,7 +19,7 @@ function checkThatDocumentIsOpen() {
  *
  * @param linePoints array with line points
  */
-function drawLineFromPoints(linePoints) {
+function drawPathFromPoints(linePoints) {
     newPath = app.activeDocument.pathItems.add();
     newPath.setEntirePath(linePoints);
     newPath.stroked = true;
@@ -64,6 +64,60 @@ function drawRectangleAroundArtBoard(artBoardName) {
     return newRectangle;
 }
 
+
+/*
+ RECURSIVE! Trying to find path item in group. Starts from direct path items of group, then
+ recursively goes through all nested groups of accepted group. Returns first element with accepted name
+ */
+function findPathItemInGroupByName(group, pathItemName) {
+    if (!group) {
+        return;
+    }
+
+    var groupDirectPathItems = group.pathItems;
+    var pathItemsLength = groupDirectPathItems.length;
+    if (pathItemsLength > 0) {
+        for (var i = 0; i < pathItemsLength; i++) {
+            var pathItem = groupDirectPathItems[i];
+            if (pathItem.name == pathItemName) {
+                return pathItem;
+            }
+        }
+    }
+
+    var nestedGroups = group.groupItems;
+    var nestedGroupLength = nestedGroups.length;
+    for (var i = 0; i < nestedGroupLength; i++) {
+        var nestedGroup = nestedGroups[i];
+        var pathItem = findPathItemInGroupByName(nestedGroup, pathItemName);
+
+        if (pathItem) {
+            return pathItem;
+        }
+    }
+}
+
+
+
+/**
+ * @param pathItemName - path item
+ * @returns first path item found by name among all path items of active document
+ */
+function findPathItemByName(pathItemName) {
+    var pathItems = activeDocument.pathItems;
+
+    var pathLength = pathItems.length;
+    for (var i = 0; i < pathLength; i++) {
+        var path = pathItems[i];
+        if (path.name == pathItemName) {
+            $.writeln("Found path item with name " + pathItemName);
+
+            return path;
+        }
+    }
+
+    $.writeln("Path item with name [" + pathItemName + "] is not found");
+}
 
 /**
  * Finds group and colors all paths of this group to different shades of gray
